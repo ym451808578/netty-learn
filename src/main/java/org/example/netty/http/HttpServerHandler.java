@@ -13,14 +13,11 @@ import java.net.URI;
  * @author Castle
  * @Date 2021/7/6 10:30 下午
  */
-public class HttpServerHandler extends SimpleChannelInboundHandler<HttpObject> {
+public class HttpServerHandler extends SimpleChannelInboundHandler<HttpMessage> {
     @Override
-    protected void channelRead0(ChannelHandlerContext channelHandlerContext, HttpObject msg) throws Exception {
-        System.out.println("channelRead0");
-        System.out.println(msg instanceof HttpRequest);
-        System.out.println(msg instanceof  HttpMessage);
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, HttpMessage msg) throws Exception {
         System.out.println(msg.getClass());
-        if (msg instanceof HttpMessage) {
+        if (msg instanceof HttpRequest) {
             System.out.println("pipeline hashcode:" + channelHandlerContext.channel().pipeline().hashCode());
             System.out.println("ChannelHandlerContext hashcode:" + this.hashCode());
             System.out.println("msg类型：" + msg.getClass());
@@ -28,16 +25,17 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<HttpObject> {
 
             HttpRequest httpRequest = (HttpRequest) msg;
             URI uri = new URI(httpRequest.uri());
+            System.out.println(uri);
             if ("/favicon.ico".equalsIgnoreCase(uri.getPath())) {
                 System.out.println("最爱图标地址，忽略");
                 return;
             }
-            ByteBuf content = Unpooled.copiedBuffer("hello，这里是服务器", CharsetUtil.UTF_8);
+            System.out.println("开始返回消息");
+            ByteBuf content = Unpooled.copiedBuffer("hello，这里是服务器",CharsetUtil.UTF_8);
             FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, content);
-            response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain");
-            response.headers().set(HttpHeaderNames.CONTENT_LENGTH, content.array().length);
+            response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=utf-8");
+            response.headers().set(HttpHeaderNames.CONTENT_LENGTH, content.readableBytes());
             channelHandlerContext.writeAndFlush(response);
-
         }
     }
 }
